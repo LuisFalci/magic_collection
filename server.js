@@ -18,6 +18,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // --- API Routes ---
 
+// --- Matches API ---
+app.post('/api/matches', (req, res) => {
+    const { date, mode, winner, players } = req.body;
+    if (!date || !mode || !players) return res.status(400).json({ error: 'Missing required fields' });
+    
+    db.run('INSERT INTO matches (date, mode, winner, players) VALUES (?, ?, ?, ?)', 
+        [date, mode, winner || null, JSON.stringify(players)], 
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        }
+    );
+});
+
+app.get('/api/matches', (req, res) => {
+    db.all('SELECT * FROM matches ORDER BY id DESC', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const matches = rows.map(r => ({
+            ...r,
+            players: JSON.parse(r.players)
+        }));
+        res.json({ data: matches });
+    });
+});
+
+
 // 1. Search Scryfall and cache card
 app.get('/api/search', async (req, res) => {
     const query = req.query.q;
