@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construtor de Deck - MageVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">MageVault</a>
+        <nav>
+            <ul>
+                <li><a href="/">Início</a></li>
+                <li><a href="/collection.html">Coleção</a></li>
+                <li><a href="/decks.html">Decks</a></li>
+                <li><a href="/deck-builder.html" class="active btn" style="color:white">Novo Deck</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="glass-panel" id="setup-panel">
+            <h2>Criar Novo Deck</h2>
+            <div class="form-group">
+                <label for="deck-name">Nome do Deck</label>
+                <div class="flex-row">
+                    <input type="text" id="deck-name" placeholder="Ex: Mono Red Aggro" required>
+                    <button class="btn" id="btn-create-deck">Começar a Montar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="builder-panel" style="display: none;">
+            <div class="flex-between" style="margin-bottom: 2rem;">
+                <h1 id="builder-deck-name">Nome do Deck</h1>
+            </div>
+
+            <div id="deck-builder-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; transition: grid-template-columns 0.3s ease;">
+                <!-- Sidebar: Search -->
+                <div class="glass-panel" id="deck-sidebar" style="overflow: hidden;">
+                    <div class="flex-between" style="margin-bottom: 1rem;">
+                        <h2>Coleção / Busca</h2>
+                        <button class="btn btn-secondary" id="btn-toggle-sidebar" style="padding: 0.5rem;" title="Ocultar Painel Lateral">← Retrair</button>
+                    </div>
+                    <div class="form-group flex-row">
+                        <button class="btn btn-secondary" id="btn-toggle-import">Importar Lista</button>
+                        <input type="text" id="card-search-input" placeholder="Buscar no Scryfall...">
+                        <button class="btn" id="btn-search">Ir</button>
+                    </div>
+
+                    <!-- Import Section -->
+                    <div id="import-section" style="display: none; margin-bottom: 1rem; margin-top: 1rem;">
+                        <textarea id="import-list-text" rows="8" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--primary-color); color: white; padding: 1rem; border-radius: 8px; resize: vertical;" placeholder="1x Beast Whisperer&#10;Toski, Bearer of Secrets"></textarea>
+                        <div class="flex-row" style="justify-content: flex-end; margin-top: 0.5rem;">
+                            <button class="btn btn-secondary" id="btn-cancel-import">Cancelar</button>
+                            <button class="btn" id="btn-confirm-import">Importar para Deck</button>
+                        </div>
+                    </div>
+
+                    <div class="flex-row" style="margin-bottom: 1rem; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 8px;">
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">Cartas por linha:</span>
+                        <select id="grid-columns-select-sidebar" style="padding: 0.5rem; border-radius: 4px; background: var(--bg-color); color: white; border: 1px solid var(--border-color);">
+                            <option value="auto">Auto (Responsivo)</option>
+                            <option value="3">3 Cartas</option>
+                            <option value="4">4 Cartas</option>
+                            <option value="5">5 Cartas</option>
+                            <option value="6">6 Cartas</option>
+                        </select>
+                    </div>
+
+                    <div id="search-results" class="card-grid" style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+                        <!-- Search results -->
+                    </div>
+                </div>
+
+                <!-- Main Area: Deck List -->
+                <div class="glass-panel" id="deck-main-area">
+                    <div class="flex-between" style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <h2>Cartas no Deck</h2>
+                        </div>
+                        <div class="flex-row">
+                            <div class="flex-row" style="gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 8px;">
+                                <select id="sort-select-deck" style="padding: 0.5rem; border-radius: 4px; background: var(--bg-color); color: white; border: 1px solid var(--border-color);">
+                                    <option value="name">Alfabética</option>
+                                    <option value="cmc">Valor de Mana (CMC)</option>
+                                    <option value="type_line">Tipo</option>
+                                    <option value="price">Preço</option>
+                                    <option value="colors">Cor</option>
+                                    <option value="released_at">Data de Lançamento</option>
+                                    <option value="rarity">Raridade</option>
+                                </select>
+                                <button class="btn btn-secondary" id="btn-sort-dir-deck" data-dir="asc" style="padding: 0.5rem;">↑</button>
+                                <select id="grid-columns-select-deck" style="padding: 0.5rem; border-radius: 4px; background: var(--bg-color); color: white; border: 1px solid var(--border-color); margin-left: 0.5rem;" title="Cartas por linha">
+                                    <option value="auto">Auto (Responsivo)</option>
+                                    <option value="1">1 Carta / Linha</option>
+                                    <option value="2">2 Cartas / Linha</option>
+                                    <option value="3">3 Cartas / Linha</option>
+                                    <option value="4">4 Cartas / Linha</option>
+                                    <option value="5">5 Cartas / Linha</option>
+                                    <option value="6">6 Cartas / Linha</option>
+                                    <option value="7">7 Cartas / Linha</option>
+                                    <option value="8">8 Cartas / Linha</option>
+                                    <option value="9">9 Cartas / Linha</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-secondary" id="btn-toggle-filters-deck" style="padding: 0.5rem; font-size: 0.9rem;" title="Filtrar por tipos">🔍 Filtros</button>
+                            <button class="btn btn-secondary" id="btn-select-all-deck" style="display: none;">Selecionar Tudo</button>
+                            <button class="btn btn-danger" id="btn-delete-deck-selected" style="display: none;">Deletar Selecionadas (0)</button>
+                        </div>
+                    </div>
+
+                    <!-- Filters Section -->
+                    <div id="filters-section-deck" class="glass-panel" style="display: none; margin-bottom: 2rem;">
+                        <h2>Filtrar por Tipo</h2>
+                        <div style="margin-top: 1rem; margin-bottom: 1rem;">
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color: gold; font-weight: bold; font-size: 1.2rem;">
+                                <input type="checkbox" id="filter-favorites-deck"> ⭐ Apenas Favoritas
+                            </label>
+                        </div>
+                        <div id="filter-checkboxes-deck" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; font-size: 1.1rem;">
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Creature" class="type-filter-deck"> Creature</label>
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Artifact" class="type-filter-deck"> Artifact</label>
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Enchantment" class="type-filter-deck"> Enchantment</label>
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Planeswalker" class="type-filter-deck"> Planeswalker</label>
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Land" class="type-filter-deck"> Land</label>
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Instant" class="type-filter-deck"> Instant</label>
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Sorcery" class="type-filter-deck"> Sorcery</label>
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Battle" class="type-filter-deck"> Battle</label>
+                        </div>
+                        <div class="flex-row" style="justify-content: flex-end;">
+                            <button class="btn btn-secondary" id="btn-clear-filters-deck">Limpar</button>
+                            <button class="btn" id="btn-apply-filters-deck">Aplicar Filtros</button>
+                        </div>
+                    </div>
+                    <div id="deck-cards" class="card-grid" style="margin-top: 0;">
+                        <!-- Deck cards -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.app && window.app.initDeckBuilder) {
+                window.app.initDeckBuilder();
+            }
+        });
+    </script>
+</body>
+</html>

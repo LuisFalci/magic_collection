@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Coleção - MageVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">MageVault</a>
+        <nav>
+            <ul>
+                <li><a href="/">Início</a></li>
+                <li><a href="/collection.html" class="active">Coleção</a></li>
+                <li><a href="/decks.html">Decks</a></li>
+                <li><a href="/deck-builder.html" class="btn" style="color:white">Novo Deck</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="flex-between">
+            <h1>Minha Coleção</h1>
+            <div class="flex-row">
+                <button class="btn btn-secondary" id="btn-sync-db" style="padding: 0.5rem; font-size: 0.9rem;" title="Atualizar informações do Scryfall">🔄 Sincronizar</button>
+                <div class="flex-row" style="gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 8px;">
+                    <select id="sort-select" style="padding: 0.5rem; border-radius: 4px; background: var(--bg-color); color: white; border: 1px solid var(--border-color);">
+                        <option value="name">Alfabética</option>
+                        <option value="cmc">Valor de Mana (CMC)</option>
+                        <option value="type_line">Tipo</option>
+                        <option value="price">Preço</option>
+                        <option value="colors">Cor</option>
+                        <option value="added_at">Data de Adição</option>
+                        <option value="released_at">Data de Lançamento</option>
+                        <option value="rarity">Raridade</option>
+                    </select>
+                    <button class="btn btn-secondary" id="btn-sort-dir" data-dir="asc" style="padding: 0.5rem;">↑</button>
+                    <select id="grid-columns-select" style="padding: 0.5rem; border-radius: 4px; background: var(--bg-color); color: white; border: 1px solid var(--border-color); margin-left: 0.5rem;" title="Cartas por linha">
+                        <option value="auto">Auto (Responsivo)</option>
+                        <option value="1">1 Carta / Linha</option>
+                        <option value="2">2 Cartas / Linha</option>
+                        <option value="3">3 Cartas / Linha</option>
+                        <option value="4">4 Cartas / Linha</option>
+                        <option value="5">5 Cartas / Linha</option>
+                        <option value="6">6 Cartas / Linha</option>
+                        <option value="7">7 Cartas / Linha</option>
+                        <option value="8">8 Cartas / Linha</option>
+                        <option value="9">9 Cartas / Linha</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" id="btn-toggle-filters" style="padding: 0.5rem; font-size: 0.9rem;" title="Filtrar por tipos">🔍 Filtros</button>
+                <button class="btn btn-secondary" id="btn-select-all" style="display: none;">Selecionar Tudo</button>
+                <button class="btn btn-danger" id="btn-delete-selected" style="display: none;">Deletar Selecionadas (0)</button>
+                <button class="btn btn-secondary" id="btn-toggle-import">Importar Lista</button>
+                <input type="text" id="add-card-search" placeholder="Buscar carta para adicionar..." style="width: 300px;">
+                <button class="btn" id="btn-search-add">Buscar</button>
+            </div>
+        </div>
+
+        <!-- Import Section -->
+        <div id="import-section" class="glass-panel" style="display: none; margin-bottom: 2rem;">
+            <h2>Importar Lista de Cartas</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Cole uma lista de cartas (uma por linha). Quantidades são aceitas (ex: 4x Lightning Bolt).</p>
+            <textarea id="import-list-text" rows="8" style="width: 100%; margin-top: 1rem; margin-bottom: 1rem; background: rgba(0,0,0,0.2); border: 1px solid var(--primary-color); color: white; padding: 1rem; border-radius: 8px; resize: vertical;" placeholder="1x Beast Whisperer&#10;Toski, Bearer of Secrets"></textarea>
+            <div class="flex-row" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" id="btn-cancel-import">Cancelar</button>
+                <button class="btn" id="btn-confirm-import">Importar para Coleção</button>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div id="filters-section" class="glass-panel" style="display: none; margin-bottom: 2rem;">
+            <h2>Filtrar por Tipo</h2>
+            <div style="margin-top: 1rem; margin-bottom: 1rem;">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color: gold; font-weight: bold; font-size: 1.2rem;">
+                    <input type="checkbox" id="filter-favorites"> ⭐ Apenas Favoritas
+                </label>
+            </div>
+            <div id="filter-checkboxes" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; font-size: 1.1rem;">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Creature" class="type-filter"> Creature</label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Artifact" class="type-filter"> Artifact</label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Enchantment" class="type-filter"> Enchantment</label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Planeswalker" class="type-filter"> Planeswalker</label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Land" class="type-filter"> Land</label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Instant" class="type-filter"> Instant</label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Sorcery" class="type-filter"> Sorcery</label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" value="Battle" class="type-filter"> Battle</label>
+            </div>
+            <div class="flex-row" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" id="btn-clear-filters">Limpar</button>
+                <button class="btn" id="btn-apply-filters">Aplicar Filtros</button>
+            </div>
+        </div>
+
+        <!-- Add Card Results Area -->
+        <div id="add-search-results" class="card-grid" style="display: none; margin-bottom: 2rem; padding: 1rem; border: 1px dashed var(--primary-color); border-radius: 12px;">
+            <!-- Search results will appear here -->
+        </div>
+
+        <div class="glass-panel">
+            <div id="collection-grid" class="card-grid">
+                <!-- Collection cards will be rendered here by JS -->
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.app && window.app.initCollection) {
+                window.app.initCollection();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Decks - MageVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">MageVault</a>
+        <nav>
+            <ul>
+                <li><a href="/">Início</a></li>
+                <li><a href="/collection.html">Coleção</a></li>
+                <li><a href="/decks.html" class="active">Decks</a></li>
+                <li><a href="/deck-builder.html" class="btn" style="color:white">Novo Deck</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="flex-between">
+            <h1>Meus Decks</h1>
+            <a href="/deck-builder.html" class="btn">Criar Novo Deck</a>
+        </div>
+
+        <div class="glass-panel mt-4">
+            <div id="decks-list" class="deck-list">
+                <!-- Decks will be listed here -->
+                <p style="color: var(--text-muted)">Carregando decks...</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.app && window.app.initDecksList) {
+                window.app.initDecksList();
+            }
+        });
+    </script>
+</body>
+</html>
