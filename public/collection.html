@@ -54,12 +54,15 @@
                         <option value="9">9 Cartas / Linha</option>
                     </select>
                 </div>
+                <input type="text" id="collection-search-input" placeholder="Buscar na coleção..." style="width: 200px; padding: 0.5rem; font-size: 0.9rem;">
                 <button class="btn btn-secondary" id="btn-toggle-filters" style="padding: 0.5rem; font-size: 0.9rem;" title="Filtrar por tipos">🔍 Filtros</button>
                 <button class="btn btn-secondary" id="btn-select-all" style="display: none;">Selecionar Tudo</button>
                 <button class="btn btn-danger" id="btn-delete-selected" style="display: none;">Deletar Selecionadas (0)</button>
                 <button class="btn btn-secondary" id="btn-toggle-import">Importar Lista</button>
-                <input type="text" id="add-card-search" placeholder="Buscar carta para adicionar..." style="width: 300px;">
-                <button class="btn" id="btn-search-add">Buscar</button>
+                <div class="flex-row" style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 8px;">
+                    <input type="text" id="add-card-search" placeholder="Buscar carta no Scryfall..." style="width: 250px;">
+                    <button class="btn" id="btn-search-add">Buscar</button>
+                </div>
             </div>
         </div>
 

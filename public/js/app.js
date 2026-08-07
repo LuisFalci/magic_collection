@@ -391,6 +391,15 @@ const app = {
             };
         }
 
+        let localSearchTerm = '';
+        const localSearchInput = document.getElementById('collection-search-input');
+        if (localSearchInput) {
+            localSearchInput.oninput = (e) => {
+                localSearchTerm = e.target.value.toLowerCase();
+                loadCollection(false);
+            };
+        }
+
         if (sortSelect) {
             sortSelect.onchange = () => { currentSortBy = sortSelect.value; loadCollection(false); };
             sortDirBtn.onclick = () => { 
@@ -485,6 +494,12 @@ const app = {
             }
             if (filterFavorites) {
                 filteredCards = filteredCards.filter(card => card.is_favorite);
+            }
+            if (localSearchTerm) {
+                filteredCards = filteredCards.filter(card => 
+                    (card.name || '').toLowerCase().includes(localSearchTerm) ||
+                    (card.type_line || '').toLowerCase().includes(localSearchTerm)
+                );
             }
 
             app.sortCards(filteredCards, currentSortBy, currentSortDir);
