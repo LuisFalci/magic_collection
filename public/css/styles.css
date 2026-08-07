@@ -162,6 +162,47 @@ input:focus {
   border-color: var(--primary-color);
 }
 
+/* Autocomplete List */
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0 0;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.autocomplete-list.hidden {
+  display: none;
+}
+
+.autocomplete-list li {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--glass-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+
+.autocomplete-list li:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.autocomplete-list img.card-thumb {
+  width: 40px;
+  border-radius: 4px;
+}
+
 .form-group {
   margin-bottom: 1.5rem;
 }

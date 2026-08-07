@@ -58,8 +58,11 @@
                 <button class="btn btn-secondary" id="btn-select-all" style="display: none;">Selecionar Tudo</button>
                 <button class="btn btn-danger" id="btn-delete-selected" style="display: none;">Deletar Selecionadas (0)</button>
                 <button class="btn btn-secondary" id="btn-toggle-import">Importar Lista</button>
-                <div class="flex-row" style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 8px;">
-                    <input type="text" id="add-card-search" placeholder="Buscar carta no Scryfall..." style="width: 250px;">
+                <div class="flex-row" style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 8px; position: relative;">
+                    <div style="position: relative;">
+                        <input type="text" id="add-card-search" placeholder="Buscar carta no Scryfall..." style="width: 250px;" autocomplete="off">
+                        <ul id="autocomplete-dropdown" class="autocomplete-list hidden"></ul>
+                    </div>
                     <button class="btn" id="btn-search-add">Buscar</button>
                 </div>
             </div>

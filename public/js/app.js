@@ -302,6 +302,7 @@ const app = {
         const searchInput = document.getElementById('add-card-search');
         const searchBtn = document.getElementById('btn-search-add');
         const searchResultsArea = document.getElementById('add-search-results');
+        const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
         
         let selectedCollectionCards = new Set();
         let allCollectionCards = [];
@@ -581,6 +582,84 @@ const app = {
                 }));
             });
         };
+
+        // Autocomplete
+        let autocompleteDebounce;
+        if (searchInput && autocompleteDropdown) {
+            searchInput.oninput = (e) => {
+                clearTimeout(autocompleteDebounce);
+                const q = e.target.value.trim();
+                
+                if (q.length < 3) {
+                    autocompleteDropdown.classList.add('hidden');
+                    return;
+                }
+                
+                autocompleteDebounce = setTimeout(async () => {
+                    autocompleteDropdown.innerHTML = '<li style="justify-content: center; color: var(--text-muted);">Buscando...</li>';
+                    autocompleteDropdown.classList.remove('hidden');
+                    
+                    try {
+                        const res = await api.searchCards(q);
+                        autocompleteDropdown.innerHTML = '';
+                        
+                        if (!res.data || res.data.length === 0) {
+                            autocompleteDropdown.innerHTML = '<li style="justify-content: center; color: var(--text-muted);">Nenhuma carta encontrada</li>';
+                            return;
+                        }
+                        
+                        // Show top 6 results
+                        res.data.slice(0, 6).forEach(card => {
+                            const li = document.createElement('li');
+                            
+                            const img = document.createElement('img');
+                            img.src = card.image_url;
+                            img.className = 'card-thumb';
+                            
+                            const text = document.createElement('span');
+                            text.textContent = card.name;
+                            
+                            li.appendChild(img);
+                            li.appendChild(text);
+                            
+                            li.onclick = () => {
+                                autocompleteDropdown.classList.add('hidden');
+                                searchInput.value = '';
+                                
+                                const existing = allCollectionCards.find(ec => ec.id === card.id);
+                                let newQ;
+                                if (existing) {
+                                    newQ = parseInt(existing.owned_quantity || 0) + 1;
+                                    existing.owned_quantity = newQ;
+                                } else {
+                                    newQ = 1;
+                                    card.owned_quantity = newQ;
+                                    allCollectionCards.push(card);
+                                }
+                                pendingUpdates.set(card.id, newQ);
+                                updateSaveButton();
+                                
+                                searchInput.placeholder = `${card.name} adicionado(a)!`;
+                                setTimeout(() => searchInput.placeholder = "Buscar carta no Scryfall...", 2000);
+                                
+                                loadCollection(false);
+                            };
+                            
+                            autocompleteDropdown.appendChild(li);
+                        });
+                    } catch (err) {
+                        autocompleteDropdown.innerHTML = '<li style="justify-content: center; color: var(--danger-color);">Erro na busca</li>';
+                    }
+                }, 400); // 400ms delay
+            };
+            
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
+                    autocompleteDropdown.classList.add('hidden');
+                }
+            });
+        }
 
         const btnToggleImport = document.getElementById('btn-toggle-import');
         const importSection = document.getElementById('import-section');
