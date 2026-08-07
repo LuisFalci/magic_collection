@@ -268,7 +268,16 @@ app.post('/api/collection', (req, res) => {
 
 // 3. Decks
 app.get('/api/decks', (req, res) => {
-    db.all('SELECT * FROM decks', [], (err, rows) => {
+    const query = `
+        SELECT 
+            d.*, 
+            COALESCE(
+                (SELECT c.image_url FROM cards c WHERE c.id = d.cover_card_id),
+                (SELECT c.image_url FROM deck_cards dc JOIN cards c ON dc.card_id = c.id WHERE dc.deck_id = d.id ORDER BY RANDOM() LIMIT 1)
+            ) as cover_image_url
+        FROM decks d
+    `;
+    db.all(query, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
@@ -286,13 +295,47 @@ app.post('/api/decks', (req, res) => {
 
 app.put('/api/decks/:id', (req, res) => {
     const deckId = req.params.id;
-    const { name } = req.body;
+    const { name, cover_card_id } = req.body;
     if (!name) return res.status(400).json({ error: 'Deck name required' });
 
-    db.run('UPDATE decks SET name = ? WHERE id = ?', [name, deckId], function (err) {
+    db.run('UPDATE decks SET name = ?, cover_card_id = ? WHERE id = ?', [name, cover_card_id || null, deckId], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         if (this.changes === 0) return res.status(404).json({ error: 'Deck not found' });
         res.json({ success: true });
+    });
+});
+
+app.post('/api/decks/:id/clone', (req, res) => {
+    const deckId = req.params.id;
+    
+    db.get('SELECT * FROM decks WHERE id = ?', [deckId], (err, deck) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!deck) return res.status(404).json({ error: 'Deck not found' });
+
+        const newName = `${deck.name} - cópia`;
+        
+        db.serialize(() => {
+            db.run('BEGIN TRANSACTION');
+            db.run('INSERT INTO decks (name, cover_card_id) VALUES (?, ?)', [newName, deck.cover_card_id], function(err) {
+                if (err) {
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ error: err.message });
+                }
+                const newDeckId = this.lastID;
+                
+                db.run(`
+                    INSERT INTO deck_cards (deck_id, card_id, quantity)
+                    SELECT ?, card_id, quantity FROM deck_cards WHERE deck_id = ?
+                `, [newDeckId, deckId], function(err) {
+                    if (err) {
+                        db.run('ROLLBACK');
+                        return res.status(500).json({ error: err.message });
+                    }
+                    db.run('COMMIT');
+                    res.json({ success: true, id: newDeckId, name: newName });
+                });
+            });
+        });
     });
 });
 

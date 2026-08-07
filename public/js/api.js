@@ -48,11 +48,18 @@ const api = {
         return res.json();
     },
 
-    updateDeck: async (id, name) => {
+    updateDeck: async (id, name, cover_card_id) => {
         const res = await fetch(`${API_BASE}/decks/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ name, cover_card_id })
+        });
+        return res.json();
+    },
+
+    cloneDeck: async (id) => {
+        const res = await fetch(`${API_BASE}/decks/${id}/clone`, {
+            method: 'POST'
         });
         return res.json();
     },

@@ -49,7 +49,8 @@ const initDb = () => {
       { table: 'cards', def: 'rarity TEXT' },
       { table: 'cards', def: 'is_favorite BOOLEAN DEFAULT 0' },
       { table: 'cards', def: 'oracle_text TEXT' },
-      { table: 'collection', def: 'added_at DATETIME DEFAULT CURRENT_TIMESTAMP' }
+      { table: 'collection', def: 'added_at DATETIME DEFAULT CURRENT_TIMESTAMP' },
+      { table: 'decks', def: 'cover_card_id TEXT' }
     ];
 
     columns.forEach(col => {
