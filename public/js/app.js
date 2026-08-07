@@ -1,4 +1,31 @@
 const app = {
+    // --- Toast Notifications ---
+    showToast: (message, type = 'success') => {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        let icon = type === 'success' ? '✅ ' : '❌ ';
+        toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+        
+        container.appendChild(toast);
+        
+        // Trigger reflow to ensure transition runs
+        void toast.offsetWidth;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 400); // Wait for transition
+        }, 3000);
+    },
+
     // --- Helper to sort cards ---
     sortCards: (cards, sortBy, sortDir) => {
         return cards.sort((a, b) => {
@@ -330,7 +357,7 @@ const app = {
                 btnSaveCollection.disabled = false;
                 btnSaveCollection.textContent = '💾 Salvar Alterações';
                 
-                alert('Alterações salvas com sucesso!');
+                app.showToast('Alterações salvas com sucesso!', 'success');
                 loadCollection(true);
             };
         }
@@ -417,7 +444,7 @@ const app = {
                 await api.syncDatabase();
                 btnSyncDb.disabled = false;
                 btnSyncDb.textContent = '🔄 Sincronizar';
-                alert('Banco de dados sincronizado com sucesso!');
+                app.showToast('Banco de dados sincronizado com sucesso!', 'success');
                 loadCollection();
             };
         }
@@ -576,7 +603,7 @@ const app = {
                         }
                         pendingUpdates.set(c.id, newQ);
                         updateSaveButton();
-                        alert('Carta adicionada localmente! Não esqueça de salvar.');
+                        app.showToast('Carta adicionada localmente! Não esqueça de salvar.', 'success');
                         loadCollection(false);
                     }
                 }));
@@ -701,16 +728,16 @@ const app = {
                             }
                         }
                         updateSaveButton();
-                        alert('Cartas importadas localmente! Não esqueça de salvar.');
+                        app.showToast('Cartas importadas localmente! Não esqueça de salvar.', 'success');
                         importSection.style.display = 'none';
                         importText.value = '';
                         loadCollection(false);
                     } else {
-                        alert('Nenhuma carta encontrada.');
+                        app.showToast('Nenhuma carta encontrada.', 'error');
                     }
                 } catch (err) {
                     console.error(err);
-                    alert('Erro ao importar cartas.');
+                    app.showToast('Erro ao importar cartas.', 'error');
                 }
                 
                 btnConfirmImport.textContent = 'Importar para Coleção';
@@ -837,7 +864,7 @@ const app = {
                         await api.cloneDeck(deck.id);
                         loadDecks();
                     } catch(err) {
-                        alert('Erro ao clonar deck.');
+                        app.showToast('Erro ao clonar deck.', 'error');
                     }
                 };
 
@@ -915,7 +942,7 @@ const app = {
         document.getElementById('btn-copy-export').onclick = () => {
             const text = document.getElementById('export-deck-text').value;
             navigator.clipboard.writeText(text).then(() => {
-                alert('Lista copiada!');
+                app.showToast('Lista copiada!', 'success');
             });
         };
         loadDecks();
@@ -1183,7 +1210,7 @@ const app = {
         const loadDeck = async (id) => {
             const res = await api.getDeckDetails(id);
             if (res.error) {
-                alert('Erro ao carregar deck');
+                app.showToast('Erro ao carregar deck', 'error');
                 return;
             }
             currentDeck = res.deck;
@@ -1310,7 +1337,7 @@ const app = {
             
             btnConfirmImport.onclick = async () => {
                 if (!currentDeck) {
-                    alert('Crie ou selecione um deck primeiro.');
+                    app.showToast('Crie ou selecione um deck primeiro.', 'error');
                     return;
                 }
 
@@ -1335,16 +1362,16 @@ const app = {
                                 await api.updateDeckCard(currentDeck.id, card.id, newQ);
                             }
                         }
-                        alert('Importação concluída!');
+                        app.showToast('Importação concluída!', 'success');
                         importSection.style.display = 'none';
                         importText.value = '';
                         await refreshDeckCards();
                     } else {
-                        alert('Nenhuma carta encontrada.');
+                        app.showToast('Nenhuma carta encontrada.', 'error');
                     }
                 } catch (err) {
                     console.error(err);
-                    alert('Erro ao importar cartas.');
+                    app.showToast('Erro ao importar cartas.', 'error');
                 }
                 
                 btnConfirmImport.textContent = 'Importar para Deck';
@@ -1416,7 +1443,7 @@ const app = {
                             const existing = resColl.data.find(ec => ec.id === c.id);
                             const newQ = (existing ? existing.owned_quantity : 0) + 1;
                             await api.updateCollection(c.id, newQ);
-                            alert(`${c.name} adicionado(a) à sua coleção!`);
+                            app.showToast(`${c.name} adicionado(a) à sua coleção!`, 'success');
                         }
                     }));
                 });
@@ -1450,9 +1477,9 @@ const app = {
                 if (confirmed) {
                     try {
                         const res = await api.importBulk();
-                        alert(res.message);
+                        app.showToast(res.message, 'success');
                     } catch (err) {
-                        alert("Erro ao iniciar a importação em lote.");
+                        app.showToast('Erro ao iniciar a importação em lote.', 'error');
                     }
                 }
             };
