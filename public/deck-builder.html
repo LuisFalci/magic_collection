@@ -45,18 +45,8 @@
                         <button class="btn btn-secondary" id="btn-toggle-sidebar" style="padding: 0.5rem;" title="Ocultar Painel Lateral">← Retrair</button>
                     </div>
                     <div class="form-group flex-row">
-                        <button class="btn btn-secondary" id="btn-toggle-import">Importar Lista</button>
                         <input type="text" id="card-search-input" placeholder="Buscar no Scryfall...">
                         <button class="btn" id="btn-search">Ir</button>
-                    </div>
-
-                    <!-- Import Section -->
-                    <div id="import-section" style="display: none; margin-bottom: 1rem; margin-top: 1rem;">
-                        <textarea id="import-list-text" rows="8" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--primary-color); color: white; padding: 1rem; border-radius: 8px; resize: vertical;" placeholder="1x Beast Whisperer&#10;Toski, Bearer of Secrets"></textarea>
-                        <div class="flex-row" style="justify-content: flex-end; margin-top: 0.5rem;">
-                            <button class="btn btn-secondary" id="btn-cancel-import">Cancelar</button>
-                            <button class="btn" id="btn-confirm-import">Importar para Deck</button>
-                        </div>
                     </div>
 
                     <div class="flex-row" style="margin-bottom: 1rem; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 8px;">
@@ -106,9 +96,20 @@
                                     <option value="9">9 Cartas / Linha</option>
                                 </select>
                             </div>
+                            <button class="btn btn-secondary" id="btn-toggle-import" style="padding: 0.5rem; font-size: 0.9rem;">📝 Importar Lista</button>
                             <button class="btn btn-secondary" id="btn-toggle-filters-deck" style="padding: 0.5rem; font-size: 0.9rem;" title="Filtrar por tipos">🔍 Filtros</button>
                             <button class="btn btn-secondary" id="btn-select-all-deck" style="display: none;">Selecionar Tudo</button>
                             <button class="btn btn-danger" id="btn-delete-deck-selected" style="display: none;">Deletar Selecionadas (0)</button>
+                        </div>
+                    </div>
+
+                    <!-- Import Section -->
+                    <div id="import-section" class="glass-panel" style="display: none; margin-bottom: 2rem;">
+                        <h2>Importar Cartas para o Deck</h2>
+                        <textarea id="import-list-text" rows="8" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--primary-color); color: white; padding: 1rem; border-radius: 8px; resize: vertical; margin-top: 1rem;" placeholder="1x Beast Whisperer&#10;Toski, Bearer of Secrets"></textarea>
+                        <div class="flex-row" style="justify-content: flex-end; margin-top: 0.5rem;">
+                            <button class="btn btn-secondary" id="btn-cancel-import">Cancelar</button>
+                            <button class="btn" id="btn-confirm-import">Importar para Deck</button>
                         </div>
                     </div>
 

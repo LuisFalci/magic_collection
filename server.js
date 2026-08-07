@@ -31,10 +31,10 @@ app.get('/api/search', async (req, res) => {
             }
         });
         if (!response.ok) {
-             if(response.status === 404) return res.json({ data: [] });
-             throw new Error(`Scryfall API error: ${response.statusText}`);
+            if (response.status === 404) return res.json({ data: [] });
+            throw new Error(`Scryfall API error: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         const cards = data.data.map(card => {
             let imgUrl = '';
@@ -58,12 +58,12 @@ app.get('/api/search', async (req, res) => {
 
         // Cache cards in DB asynchronously
         cards.forEach(c => {
-             db.run(`INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity) 
+            db.run(`INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity) 
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON CONFLICT(id) DO UPDATE SET 
                      cmc=excluded.cmc, type_line=excluded.type_line, price=excluded.price, 
-                     colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity`, 
-                     [c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity]);
+                     colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity`,
+                [c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity]);
         });
 
         res.json({ data: cards });
@@ -100,13 +100,13 @@ app.post('/api/import', async (req, res) => {
             });
 
             if (!response.ok) {
-                 if (response.status === 404) {
-                     continue;
-                 }
-                 console.error(`Scryfall API error: ${response.status} ${response.statusText}`);
-                 continue;
+                if (response.status === 404) {
+                    continue;
+                }
+                console.error(`Scryfall API error: ${response.status} ${response.statusText}`);
+                continue;
             }
-            
+
             const data = await response.json();
             const cards = data.data.map(card => {
                 let imgUrl = '';
@@ -134,12 +134,12 @@ app.post('/api/import', async (req, res) => {
 
         // Cache cards in DB asynchronously
         allCards.forEach(c => {
-             db.run(`INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity) 
+            db.run(`INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity) 
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON CONFLICT(id) DO UPDATE SET 
                      cmc=excluded.cmc, type_line=excluded.type_line, price=excluded.price, 
-                     colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity`, 
-                     [c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity]);
+                     colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity`,
+                [c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity]);
         });
 
         res.json({ data: allCards });
@@ -187,8 +187,8 @@ app.post('/api/sync', (req, res) => {
                     }));
 
                     cards.forEach(c => {
-                        db.run(`UPDATE cards SET cmc=?, type_line=?, price=?, colors=?, released_at=?, rarity=? WHERE id=?`, 
-                               [c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.id]);
+                        db.run(`UPDATE cards SET cmc=?, type_line=?, price=?, colors=?, released_at=?, rarity=? WHERE id=?`,
+                            [c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.id]);
                     });
                 }
                 await new Promise(r => setTimeout(r, 100)); // Rate limit protection
@@ -234,18 +234,18 @@ app.get('/api/collection', (req, res) => {
 
 app.put('/api/cards/:id/favorite', (req, res) => {
     const { is_favorite } = req.body;
-    db.run('UPDATE cards SET is_favorite = ? WHERE id = ?', [is_favorite ? 1 : 0, req.params.id], function(err) {
+    db.run('UPDATE cards SET is_favorite = ? WHERE id = ?', [is_favorite ? 1 : 0, req.params.id], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true, is_favorite: !!is_favorite });
     });
 });
 
 app.post('/api/collection', (req, res) => {
-    const { card_id, quantity } = req.body; 
+    const { card_id, quantity } = req.body;
     if (!card_id || quantity === undefined) return res.status(400).json({ error: 'Missing card_id or quantity' });
 
     if (quantity <= 0) {
-        db.run('DELETE FROM collection WHERE card_id = ?', [card_id], function(err) {
+        db.run('DELETE FROM collection WHERE card_id = ?', [card_id], function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
         });
@@ -254,7 +254,7 @@ app.post('/api/collection', (req, res) => {
             `INSERT INTO collection (card_id, quantity) VALUES (?, ?) 
              ON CONFLICT(card_id) DO UPDATE SET quantity = ?`,
             [card_id, quantity, quantity],
-            function(err) {
+            function (err) {
                 if (err) return res.status(500).json({ error: err.message });
                 res.json({ success: true });
             }
@@ -274,7 +274,7 @@ app.post('/api/decks', (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Deck name required' });
 
-    db.run('INSERT INTO decks (name) VALUES (?)', [name], function(err) {
+    db.run('INSERT INTO decks (name) VALUES (?)', [name], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: this.lastID, name });
     });
@@ -285,7 +285,7 @@ app.put('/api/decks/:id', (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Deck name required' });
 
-    db.run('UPDATE decks SET name = ? WHERE id = ?', [name, deckId], function(err) {
+    db.run('UPDATE decks SET name = ? WHERE id = ?', [name, deckId], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         if (this.changes === 0) return res.status(404).json({ error: 'Deck not found' });
         res.json({ success: true });
@@ -301,7 +301,7 @@ app.delete('/api/decks/:id', (req, res) => {
                 db.run('ROLLBACK');
                 return res.status(500).json({ error: err.message });
             }
-            db.run('DELETE FROM decks WHERE id = ?', [deckId], function(err) {
+            db.run('DELETE FROM decks WHERE id = ?', [deckId], function (err) {
                 if (err) {
                     db.run('ROLLBACK');
                     return res.status(500).json({ error: err.message });
@@ -320,7 +320,8 @@ app.get('/api/decks/:id', (req, res) => {
         if (!deck) return res.status(404).json({ error: 'Deck not found' });
 
         db.all(`
-            SELECT dc.quantity, c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.is_favorite 
+            SELECT dc.quantity, c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.is_favorite,
+                   COALESCE((SELECT quantity FROM collection WHERE card_id = c.id), 0) as owned_quantity
             FROM deck_cards dc 
             JOIN cards c ON dc.card_id = c.id 
             WHERE dc.deck_id = ?
@@ -333,17 +334,17 @@ app.get('/api/decks/:id', (req, res) => {
 
 app.post('/api/decks/:id/cards', (req, res) => {
     const deckId = req.params.id;
-    const { card_id, quantity } = req.body; 
+    const { card_id, quantity } = req.body;
 
     if (!card_id || quantity === undefined) return res.status(400).json({ error: 'Missing card_id or quantity' });
 
     if (quantity <= 0) {
-         db.run('DELETE FROM deck_cards WHERE deck_id = ? AND card_id = ?', [deckId, card_id], err => {
-             if (err) return res.status(500).json({ error: err.message });
-             res.json({ success: true });
-         });
+        db.run('DELETE FROM deck_cards WHERE deck_id = ? AND card_id = ?', [deckId, card_id], err => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
     } else {
-         db.run(
+        db.run(
             `INSERT INTO deck_cards (deck_id, card_id, quantity) VALUES (?, ?, ?)
              ON CONFLICT(deck_id, card_id) DO UPDATE SET quantity = ?`,
             [deckId, card_id, quantity, quantity],
@@ -360,8 +361,8 @@ app.delete('/api/decks/:id/cards/:card_id', (req, res) => {
     const cardId = req.params.card_id;
 
     db.run('DELETE FROM deck_cards WHERE deck_id = ? AND card_id = ?', [deckId, cardId], err => {
-         if (err) return res.status(500).json({ error: err.message });
-         res.json({ success: true });
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
     });
 });
 
