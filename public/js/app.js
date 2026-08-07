@@ -41,6 +41,7 @@ const app = {
         
         const cardDiv = document.createElement('div');
         cardDiv.className = `mtg-card ${inDeck ? 'in-deck' : ''} ${selected ? 'selected' : ''}`;
+        cardDiv.setAttribute('data-id', card.id);
         
         if (selectable) {
             cardDiv.style.cursor = 'pointer';
@@ -119,6 +120,14 @@ const app = {
             cardDiv.appendChild(badgeContainer);
         }
 
+        if (card.is_favorite) {
+            const favBadge = document.createElement('div');
+            favBadge.className = 'favorite-badge';
+            favBadge.textContent = '⭐';
+            favBadge.title = 'Favorita';
+            cardDiv.appendChild(favBadge);
+        }
+
         if (quantity !== undefined) {
             const qBadge = document.createElement('div');
             qBadge.className = `quantity-badge ${quantity < 0 ? 'warning' : ''}`;
@@ -191,6 +200,25 @@ const app = {
                 
                 card.is_favorite = isFavorite; // update locally
                 
+                // Atualizar visualmente nas cartas renderizadas no grid
+                const gridCards = document.querySelectorAll(`div.mtg-card[data-id="${card.id}"]`);
+                gridCards.forEach(cDiv => {
+                    let favBadge = cDiv.querySelector('.favorite-badge');
+                    if (isFavorite) {
+                        if (!favBadge) {
+                            favBadge = document.createElement('div');
+                            favBadge.className = 'favorite-badge';
+                            favBadge.textContent = '⭐';
+                            favBadge.title = 'Favorita';
+                            cDiv.appendChild(favBadge);
+                        }
+                    } else {
+                        if (favBadge) {
+                            favBadge.remove();
+                        }
+                    }
+                });
+
                 try {
                     const res = await fetch(`/api/cards/${card.id}/favorite`, {
                         method: 'PUT',
@@ -278,6 +306,33 @@ const app = {
         let selectedCollectionCards = new Set();
         let allCollectionCards = [];
         let allCollectionSelected = false;
+        
+        let pendingUpdates = new Map();
+        const btnSaveCollection = document.getElementById('btn-save-collection');
+        const updateSaveButton = () => {
+            if (btnSaveCollection) {
+                btnSaveCollection.style.display = pendingUpdates.size > 0 ? 'block' : 'none';
+            }
+        };
+
+        if (btnSaveCollection) {
+            btnSaveCollection.onclick = async () => {
+                btnSaveCollection.disabled = true;
+                btnSaveCollection.textContent = 'Salvando...';
+                
+                for (const [cardId, qty] of pendingUpdates.entries()) {
+                    await api.updateCollection(cardId, qty);
+                }
+                
+                pendingUpdates.clear();
+                updateSaveButton();
+                btnSaveCollection.disabled = false;
+                btnSaveCollection.textContent = '💾 Salvar Alterações';
+                
+                alert('Alterações salvas com sucesso!');
+                loadCollection(true);
+            };
+        }
         
         const btnDeleteSelected = document.getElementById('btn-delete-selected');
         const btnSelectAll = document.getElementById('btn-select-all');
@@ -387,19 +442,18 @@ const app = {
             btnDeleteSelected.onclick = async () => {
                 if (!confirm(`Tem certeza que deseja remover ${selectedCollectionCards.size} carta(s) da coleção?`)) return;
                 
-                btnDeleteSelected.disabled = true;
-                btnDeleteSelected.textContent = 'Deletando...';
-                
                 for (const cardId of selectedCollectionCards) {
-                    await api.updateCollection(cardId, 0);
+                    pendingUpdates.set(cardId, 0);
+                    const localCard = allCollectionCards.find(c => c.id === cardId);
+                    if (localCard) localCard.owned_quantity = 0;
                 }
                 
                 selectedCollectionCards.clear();
                 allCollectionSelected = false;
                 if (btnSelectAll) btnSelectAll.textContent = 'Selecionar Tudo';
                 updateDeleteBtn();
-                btnDeleteSelected.disabled = false;
-                loadCollection();
+                updateSaveButton();
+                loadCollection(false);
             };
         }
 
@@ -414,6 +468,12 @@ const app = {
                 if (btnSelectAll) btnSelectAll.style.display = 'none';
             } else {
                 if (btnSelectAll) btnSelectAll.style.display = 'block';
+            }
+
+            const countEl = document.getElementById('collection-count');
+            if (countEl) {
+                const totalCards = allCollectionCards.reduce((sum, c) => sum + parseInt(c.owned_quantity || 1), 0);
+                countEl.textContent = `Total de Cartas: ${totalCards}`;
             }
             
             let filteredCards = allCollectionCards;
@@ -451,13 +511,21 @@ const app = {
                         updateDeleteBtn();
                     },
                     onAdd: async (c) => {
-                        await api.updateCollection(c.id, owned + 1);
-                        loadCollection();
+                        const newQ = owned + 1;
+                        pendingUpdates.set(c.id, newQ);
+                        const localCard = allCollectionCards.find(cc => cc.id === c.id);
+                        if (localCard) localCard.owned_quantity = newQ;
+                        updateSaveButton();
+                        loadCollection(false);
                     },
                     onRemove: async (c) => {
                         if (owned > 0) {
-                            await api.updateCollection(c.id, owned - 1);
-                            loadCollection();
+                            const newQ = owned - 1;
+                            pendingUpdates.set(c.id, newQ);
+                            const localCard = allCollectionCards.find(cc => cc.id === c.id);
+                            if (localCard) localCard.owned_quantity = newQ;
+                            updateSaveButton();
+                            loadCollection(false);
                         }
                     }
                 }));
@@ -479,13 +547,20 @@ const app = {
                 searchResultsArea.appendChild(app.renderCard(card, {
                     customActionLabel: 'Adicionar à Coleção',
                     onCustomAction: async (c) => {
-                        // find if we already have it to increment
-                        const collection = await api.getCollection();
-                        const existing = collection.find(ec => ec.id === c.id);
-                        const currentQ = existing ? existing.owned_quantity : 0;
-                        await api.updateCollection(c.id, currentQ + 1);
-                        alert('Carta adicionada!');
-                        loadCollection();
+                        const existing = allCollectionCards.find(ec => ec.id === c.id);
+                        let newQ;
+                        if (existing) {
+                            newQ = parseInt(existing.owned_quantity || 0) + 1;
+                            existing.owned_quantity = newQ;
+                        } else {
+                            newQ = 1;
+                            c.owned_quantity = newQ;
+                            allCollectionCards.push(c);
+                        }
+                        pendingUpdates.set(c.id, newQ);
+                        updateSaveButton();
+                        alert('Carta adicionada localmente! Não esqueça de salvar.');
+                        loadCollection(false);
                     }
                 }));
             });
@@ -514,19 +589,27 @@ const app = {
                 try {
                     const res = await api.importCards(names);
                     if (res.data && res.data.length > 0) {
-                        const collection = await api.getCollection();
                         for (const item of parsed) {
                             const card = res.data.find(c => c.name.toLowerCase() === item.name.toLowerCase());
                             if (card) {
-                                const existing = collection.find(ec => ec.id === card.id);
-                                const currentQ = existing ? existing.owned_quantity : 0;
-                                await api.updateCollection(card.id, currentQ + item.quantity);
+                                const existing = allCollectionCards.find(ec => ec.id === card.id);
+                                let newQ;
+                                if (existing) {
+                                    newQ = parseInt(existing.owned_quantity || 0) + item.quantity;
+                                    existing.owned_quantity = newQ;
+                                } else {
+                                    newQ = item.quantity;
+                                    card.owned_quantity = newQ;
+                                    allCollectionCards.push(card);
+                                }
+                                pendingUpdates.set(card.id, newQ);
                             }
                         }
-                        alert('Importação concluída!');
+                        updateSaveButton();
+                        alert('Cartas importadas localmente! Não esqueça de salvar.');
                         importSection.style.display = 'none';
                         importText.value = '';
-                        loadCollection();
+                        loadCollection(false);
                     } else {
                         alert('Nenhuma carta encontrada.');
                     }
@@ -797,6 +880,12 @@ const app = {
                 if (btnSelectAllDeck) btnSelectAllDeck.style.display = 'block';
             }
 
+            const countEl = document.getElementById('deck-count');
+            if (countEl) {
+                const totalDeckCards = deckCards.reduce((sum, c) => sum + parseInt(c.quantity || 1), 0);
+                countEl.textContent = `Total de Cartas: ${totalDeckCards}`;
+            }
+
             let filteredDeckCards = deckCards;
             if (activeTypeFiltersDeck.length > 0) {
                 filteredDeckCards = filteredDeckCards.filter(card => {
@@ -896,6 +985,8 @@ const app = {
                 colRes.forEach(card => {
                     resArea.appendChild(app.renderCard(card, {
                         draggable: true,
+                        inDeck: parseInt(card.used_quantity || 0) > 0,
+                        deckNames: card.deck_names,
                         customActionLabel: 'Adicionar ao Deck',
                         onCustomAction: async (c) => {
                             if (!currentDeck) return;
@@ -938,6 +1029,8 @@ const app = {
                     colRes.forEach(card => {
                         resArea.appendChild(app.renderCard(card, {
                             draggable: true,
+                            inDeck: parseInt(card.used_quantity || 0) > 0,
+                            deckNames: card.deck_names,
                             customActionLabel: 'Adicionar ao Deck',
                             onCustomAction: async (c) => {
                                 if (!currentDeck) return;
@@ -955,6 +1048,7 @@ const app = {
             resArea.innerHTML = '<p>Buscando...</p>';
             
             const res = await api.searchCards(q);
+            const currentCollection = await api.getCollection();
             resArea.innerHTML = '';
             
             if (!res.data || res.data.length === 0) {
@@ -963,8 +1057,11 @@ const app = {
             }
             
             res.data.forEach(card => {
+                const colCard = currentCollection.find(c => c.id === card.id);
                 resArea.appendChild(app.renderCard(card, {
                     draggable: true,
+                    inDeck: colCard ? parseInt(colCard.used_quantity || 0) > 0 : false,
+                    deckNames: colCard ? colCard.deck_names : null,
                     customActionLabel: 'Adicionar ao Deck',
                     onCustomAction: async (c) => {
                         if (!currentDeck) return;

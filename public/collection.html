@@ -22,8 +22,12 @@
 
     <main>
         <div class="flex-between">
-            <h1>Minha Coleção</h1>
+            <div>
+                <h1>Minha Coleção</h1>
+                <p id="collection-count" style="color: var(--text-muted); margin-top: -1.5rem; margin-bottom: 1.5rem; font-size: 1.1rem;">Total de Cartas: 0</p>
+            </div>
             <div class="flex-row">
+                <button class="btn btn-success" id="btn-save-collection" style="display: none; font-size: 0.9rem;" title="Salvar alterações pendentes">💾 Salvar Alterações</button>
                 <button class="btn btn-secondary" id="btn-sync-db" style="padding: 0.5rem; font-size: 0.9rem;" title="Atualizar informações do Scryfall">🔄 Sincronizar</button>
                 <div class="flex-row" style="gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 8px;">
                     <select id="sort-select" style="padding: 0.5rem; border-radius: 4px; background: var(--bg-color); color: white; border: 1px solid var(--border-color);">
