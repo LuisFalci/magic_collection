@@ -40,7 +40,6 @@ const initDb = () => {
       )
     `);
 
-    // Migrations for new columns
     const columns = [
       { table: 'cards', def: 'cmc REAL' },
       { table: 'cards', def: 'type_line TEXT' },
@@ -49,6 +48,7 @@ const initDb = () => {
       { table: 'cards', def: 'released_at TEXT' },
       { table: 'cards', def: 'rarity TEXT' },
       { table: 'cards', def: 'is_favorite BOOLEAN DEFAULT 0' },
+      { table: 'cards', def: 'oracle_text TEXT' },
       { table: 'collection', def: 'added_at DATETIME DEFAULT CURRENT_TIMESTAMP' }
     ];
 

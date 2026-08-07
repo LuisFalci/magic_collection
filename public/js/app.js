@@ -498,7 +498,8 @@ const app = {
             if (localSearchTerm) {
                 filteredCards = filteredCards.filter(card => 
                     (card.name || '').toLowerCase().includes(localSearchTerm) ||
-                    (card.type_line || '').toLowerCase().includes(localSearchTerm)
+                    (card.type_line || '').toLowerCase().includes(localSearchTerm) ||
+                    (card.oracle_text || '').toLowerCase().includes(localSearchTerm)
                 );
             }
 

@@ -52,18 +52,19 @@ app.get('/api/search', async (req, res) => {
                 price: parseFloat(card.prices?.usd || 0),
                 colors: (card.colors || []).join(','),
                 released_at: card.released_at || '',
-                rarity: card.rarity || ''
+                rarity: card.rarity || '',
+                oracle_text: card.oracle_text || (card.card_faces ? card.card_faces.map(f => f.oracle_text).join('\n') : '')
             };
         }).filter(c => c.image_url); // filter out cards without images for simplicity
 
         // Cache cards in DB asynchronously
         cards.forEach(c => {
-            db.run(`INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            db.run(`INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity, oracle_text) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON CONFLICT(id) DO UPDATE SET 
                      cmc=excluded.cmc, type_line=excluded.type_line, price=excluded.price, 
-                     colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity`,
-                [c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity]);
+                     colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity, oracle_text=excluded.oracle_text`,
+                [c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.oracle_text]);
         });
 
         res.json({ data: cards });
@@ -124,7 +125,8 @@ app.post('/api/import', async (req, res) => {
                     price: parseFloat(card.prices?.usd || 0),
                     colors: (card.colors || []).join(','),
                     released_at: card.released_at || '',
-                    rarity: card.rarity || ''
+                    rarity: card.rarity || '',
+                    oracle_text: card.oracle_text || (card.card_faces ? card.card_faces.map(f => f.oracle_text).join('\n') : '')
                 };
             }).filter(c => c.image_url);
 
@@ -134,12 +136,12 @@ app.post('/api/import', async (req, res) => {
 
         // Cache cards in DB asynchronously
         allCards.forEach(c => {
-            db.run(`INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            db.run(`INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity, oracle_text) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON CONFLICT(id) DO UPDATE SET 
                      cmc=excluded.cmc, type_line=excluded.type_line, price=excluded.price, 
-                     colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity`,
-                [c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity]);
+                     colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity, oracle_text=excluded.oracle_text`,
+                [c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.oracle_text]);
         });
 
         res.json({ data: allCards });
@@ -183,12 +185,13 @@ app.post('/api/sync', (req, res) => {
                         price: parseFloat(card.prices?.usd || 0),
                         colors: (card.colors || []).join(','),
                         released_at: card.released_at || '',
-                        rarity: card.rarity || ''
+                        rarity: card.rarity || '',
+                        oracle_text: card.oracle_text || (card.card_faces ? card.card_faces.map(f => f.oracle_text).join('\n') : '')
                     }));
 
                     cards.forEach(c => {
-                        db.run(`UPDATE cards SET cmc=?, type_line=?, price=?, colors=?, released_at=?, rarity=? WHERE id=?`,
-                            [c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.id]);
+                        db.run(`UPDATE cards SET cmc=?, type_line=?, price=?, colors=?, released_at=?, rarity=?, oracle_text=? WHERE id=?`,
+                            [c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.oracle_text, c.id]);
                     });
                 }
                 await new Promise(r => setTimeout(r, 100)); // Rate limit protection
@@ -216,6 +219,7 @@ app.get('/api/collection', (req, res) => {
             cards.released_at,
             cards.rarity,
             cards.is_favorite,
+            cards.oracle_text,
             c.added_at,
             c.quantity as owned_quantity,
             COALESCE(SUM(dc.quantity), 0) as used_quantity,
@@ -320,7 +324,7 @@ app.get('/api/decks/:id', (req, res) => {
         if (!deck) return res.status(404).json({ error: 'Deck not found' });
 
         db.all(`
-            SELECT dc.quantity, c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.is_favorite,
+            SELECT dc.quantity, c.id, c.name, c.image_url, c.cmc, c.type_line, c.price, c.colors, c.released_at, c.rarity, c.is_favorite, c.oracle_text,
                    COALESCE((SELECT quantity FROM collection WHERE card_id = c.id), 0) as owned_quantity
             FROM deck_cards dc 
             JOIN cards c ON dc.card_id = c.id 
