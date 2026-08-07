@@ -151,6 +151,153 @@ app.post('/api/import', async (req, res) => {
     }
 });
 
+// 1.6 All Cards (Pagination)
+app.get('/api/all-cards', (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = (page - 1) * limit;
+    const searchQuery = req.query.q || '';
+
+    let queryStr = 'SELECT * FROM cards';
+    let countQueryStr = 'SELECT COUNT(*) as count FROM cards';
+    let params = [];
+
+    if (searchQuery) {
+        queryStr += ' WHERE name LIKE ? OR type_line LIKE ? OR oracle_text LIKE ?';
+        countQueryStr += ' WHERE name LIKE ? OR type_line LIKE ? OR oracle_text LIKE ?';
+        const likeQuery = `%${searchQuery}%`;
+        params = [likeQuery, likeQuery, likeQuery];
+    }
+
+    queryStr += ' ORDER BY name ASC LIMIT ? OFFSET ?';
+
+    db.all(queryStr, [...params, limit, offset], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        db.get(countQueryStr, params, (err, countRow) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({
+                data: rows,
+                total: countRow.count,
+                page,
+                limit
+            });
+        });
+    });
+});
+
+// 1.7 Bulk Import Scryfall
+const https = require('https');
+const zlib = require('zlib');
+const readline = require('readline');
+
+app.post('/api/import-bulk', async (req, res) => {
+    res.json({ message: 'Importação iniciada em background. Isso pode demorar alguns minutos. Fique de olho no terminal do servidor.' });
+    
+    try {
+        console.log("Iniciando busca da URL do Oracle Cards no Scryfall...");
+        const bulkRes = await fetch('https://api.scryfall.com/bulk-data', {
+            headers: { 'User-Agent': 'MageVault/1.0' }
+        });
+        const bulkData = await bulkRes.json();
+        const oracle = bulkData.data.find(d => d.type === 'oracle_cards');
+        
+        const downloadUri = oracle.download_uri || oracle.jsonl_download_uri;
+        
+        if (!downloadUri) throw new Error("URL de download não encontrada.");
+        
+        console.log(`Baixando base de dados de: ${downloadUri}`);
+        
+        const processStream = (response) => {
+            if (response.statusCode === 301 || response.statusCode === 302) {
+                console.log('Redirecionado para', response.headers.location);
+                https.get(response.headers.location, processStream).on('error', e => console.error("Erro no redirecionamento:", e));
+                return;
+            }
+
+            console.log("Download iniciado. Inserindo no banco em lote (Stream)...");
+            const gunzip = zlib.createGunzip();
+            response.pipe(gunzip);
+
+            const rl = readline.createInterface({
+                input: gunzip,
+                crlfDelay: Infinity
+            });
+
+            db.run('BEGIN TRANSACTION');
+            const stmt = db.prepare(`
+                INSERT INTO cards (id, name, image_url, cmc, type_line, price, colors, released_at, rarity, oracle_text) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET 
+                name=excluded.name, image_url=excluded.image_url, cmc=excluded.cmc, type_line=excluded.type_line, 
+                price=excluded.price, colors=excluded.colors, released_at=excluded.released_at, rarity=excluded.rarity, 
+                oracle_text=excluded.oracle_text
+            `);
+
+            let count = 0;
+            
+            rl.on('line', (line) => {
+                try {
+                    // Ignore empty lines or commas at end of line (if old array format)
+                    if (line.trim() === '[' || line.trim() === ']') return;
+                    if (line.endsWith(',')) line = line.slice(0, -1);
+                    
+                    const card = JSON.parse(line);
+                    
+                    let imgUrl = '';
+                    if (card.image_uris && card.image_uris.normal) {
+                        imgUrl = card.image_uris.normal;
+                    } else if (card.card_faces && card.card_faces[0].image_uris) {
+                        imgUrl = card.card_faces[0].image_uris.normal;
+                    }
+                    
+                    if (!imgUrl) return;
+                    
+                    stmt.run([
+                        card.id,
+                        card.name,
+                        imgUrl,
+                        card.cmc || 0,
+                        card.type_line || '',
+                        parseFloat(card.prices?.usd || 0),
+                        (card.colors || []).join(','),
+                        card.released_at || '',
+                        card.rarity || '',
+                        card.oracle_text || (card.card_faces ? card.card_faces.map(f => f.oracle_text).join('\n') : '')
+                    ]);
+                    count++;
+                } catch (e) {
+                    // Skip invalid lines
+                }
+            });
+
+            rl.on('close', () => {
+                stmt.finalize();
+                db.run('COMMIT', (err) => {
+                    if (err) {
+                        console.error("Erro ao dar COMMIT:", err);
+                        db.run('ROLLBACK');
+                    } else {
+                        console.log(`Importação de ${count} cartas concluída com sucesso! Banco atualizado.`);
+                    }
+                });
+            });
+            
+            rl.on('error', (err) => {
+                console.error("Erro durante o processamento do JSONL:", err);
+                db.run('ROLLBACK');
+            });
+        };
+
+        https.get(downloadUri, processStream).on('error', (e) => {
+            console.error("Erro no download:", e);
+        });
+        
+    } catch (err) {
+        console.error("Erro no processo de importação:", err);
+    }
+});
+
 // 1.8 Sync DB
 app.post('/api/sync', (req, res) => {
     db.all('SELECT id FROM cards', [], async (err, rows) => {

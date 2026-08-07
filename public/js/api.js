@@ -83,6 +83,16 @@ const api = {
             body: JSON.stringify({ card_id, quantity })
         });
         return res.json();
+    },
+    
+    getAllCards: async (page = 1, limit = 50, q = '') => {
+        const res = await fetch(`${API_BASE}/all-cards?page=${page}&limit=${limit}&q=${encodeURIComponent(q)}`);
+        return res.json();
+    },
+    
+    importBulk: async () => {
+        const res = await fetch(`${API_BASE}/import-bulk`, { method: 'POST' });
+        return res.json();
     }
 };
 

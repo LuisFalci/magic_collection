@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todas as Cartas - MageVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">MageVault</a>
+        <nav>
+            <ul>
+                <li><a href="/">Início</a></li>
+                <li><a href="/collection.html">Minha Coleção</a></li>
+                <li><a href="/decks.html">Meus Decks</a></li>
+                <li><a href="/all-cards.html" class="active">Cartas do Magic</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="flex-between">
+            <h1>Todas as Cartas do Magic</h1>
+            <button class="btn btn-secondary" id="btn-import-bulk" title="Apenas clique se o banco estiver vazio ou desatualizado.">Sincronizar Base Scryfall</button>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Navegue por toda a base de dados oficial do Scryfall (Oracle Cards). O banco é preenchido localmente para acesso super rápido.</p>
+
+        <div style="margin-bottom: 2rem;">
+            <input type="text" id="all-cards-search-input" placeholder="🔍 Buscar cartas por nome, tipo ou texto..." style="width: 100%; padding: 0.8rem; font-size: 1.1rem; border-radius: 8px; border: 1px solid var(--primary-color); background: rgba(0,0,0,0.3); color: white;">
+        </div>
+
+        <div class="glass-panel mt-4">
+            <div id="all-cards-grid" class="card-grid">
+                <!-- Cards will be listed here -->
+                <p style="color: var(--text-muted); grid-column: 1 / -1;">Carregando cartas da base de dados...</p>
+            </div>
+            
+            <div id="pagination-controls" class="flex-row" style="justify-content: center; margin-top: 2rem; gap: 1rem;">
+                <button class="btn btn-secondary" id="btn-prev-page" disabled>Anterior</button>
+                <span id="page-indicator" style="align-self: center; color: white;">Página 1</span>
+                <button class="btn btn-secondary" id="btn-next-page">Próxima</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.app && window.app.initAllCards) {
+                window.app.initAllCards();
+            }
+        });
+    </script>
+</body>
+</html>
